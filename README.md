@@ -8,7 +8,7 @@
   - [**写在最后**](#写在最后)
 
 ## **效果展示**
-![效果展示](https://ghproxy.com/https://github.com/Lptr-byte/MyPictures/blob/main/QQ_Image_1678276347525.jpg "效果展示")
+![效果展示](https://github.com/Lptr-byte/MyPictures/blob/main/QQ_Image_1678276347525.jpg "效果展示")
 
 ## **使用说明**
 下载对应的release文件，并解压缩，目前只支持查看存放在可执行文件下 "resource" 
