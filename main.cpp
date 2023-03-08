@@ -169,11 +169,11 @@ int main(){
             shader.setFloat("yoffset", y_offset);
             float scale_value = 1.0f;
             if(width * 3 > height * 4){
-                scale_value = (float)height * SCR_WIDTH / (width * SCR_HEIGHT);
+                scale_value = ((float)height / width) * ((float)SCR_WIDTH / SCR_HEIGHT);
                 trans = glm::scale(trans, glm::vec3(1.0f, scale_value, scale_value));
             }
             else if(width * 3 < height * 4){
-                scale_value = (float)width * SCR_HEIGHT / (height * SCR_WIDTH);
+                scale_value = ((float)width / height) * ((float)SCR_HEIGHT / SCR_WIDTH);
                 trans = glm::scale(trans, glm::vec3(scale_value, 1.0f, scale_value));
             }
             std::cout << scale_value << std::endl;
@@ -287,17 +287,17 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos){
         firstMouse = true;
         if((int)xpos > 240 && (int)xpos < 960 && (int)ypos > 800 && (int)ypos < 900){
             ShouldDrawBottomDocker = true;
-            if((int)xpos > 280 && (int)xpos < 370 && (int)ypos > 805 && (int)ypos < 895)
+            if((int)xpos > 285 && (int)xpos < 365 && (int)ypos > 805 && (int)ypos < 895)
                 shadow = 1;
-            else if((int)xpos > 390 && (int)xpos < 480 && (int)ypos > 805 && (int)ypos < 895)
+            else if((int)xpos > 395 && (int)xpos < 475 && (int)ypos > 810 && (int)ypos < 890)
                 shadow = 2;
-            else if((int)xpos > 500 && (int)xpos < 590 && (int)ypos > 805 && (int)ypos < 895)
+            else if((int)xpos > 505 && (int)xpos < 585 && (int)ypos > 810 && (int)ypos < 890)
                 shadow = 3;
-            else if((int)xpos > 610 && (int)xpos < 700 && (int)ypos > 805 && (int)ypos < 895)
+            else if((int)xpos > 615 && (int)xpos < 695 && (int)ypos > 810 && (int)ypos < 890)
                 shadow = 4;
-            else if((int)xpos > 720 && (int)xpos < 810 && (int)ypos > 805 && (int)ypos < 895)
+            else if((int)xpos > 725 && (int)xpos < 805 && (int)ypos > 810 && (int)ypos < 890)
                 shadow = 5;
-            else if((int)xpos > 830 && (int)xpos < 920 && (int)ypos > 805 && (int)ypos < 895)
+            else if((int)xpos > 835 && (int)xpos < 915 && (int)ypos > 810 && (int)ypos < 890)
                 shadow = 6;
             else
                 shadow = 0;
@@ -388,15 +388,15 @@ void DrawBottomDocker(){
     DrawList->AddRectFilled(ImVec2(240, 800), ImVec2(960, 900), ImColor(255, 255, 255, 220), 20.0f);
     //绘制控件图标
     //左旋
-    DrawList->PathArcTo(ImVec2(325, 850), 30.0f, glm::radians(180.0f), glm::radians(450.0f));
+    DrawList->PathArcTo(ImVec2(325, 850), 28.0f, glm::radians(210.0f), glm::radians(450.0f));
     DrawList->PathStroke(IconColor, 0, 5.0f);
     DrawList->PathClear();
-    DrawList->AddTriangleFilled(ImVec2(292.5, 850), ImVec2(292.5, 820), ImVec2(300.36, 830), IconColor);
+    DrawList->AddTriangleFilled(ImVec2(294.5, 850), ImVec2(297.5, 820), ImVec2(302.36, 837.5), IconColor);
     //右旋
-    DrawList->PathArcTo(ImVec2(435, 850), 30.0f, glm::radians(90.0f), glm::radians(360.0f));
+    DrawList->PathArcTo(ImVec2(435, 850), 28.0f, glm::radians(90.0f), glm::radians(330.0f));
     DrawList->PathStroke(IconColor, 0, 5.0f);
     DrawList->PathClear();
-    DrawList->AddTriangleFilled(ImVec2(467.5, 850), ImVec2(467.5, 820), ImVec2(459.64, 830), IconColor);
+    DrawList->AddTriangleFilled(ImVec2(462.5, 820), ImVec2(465.5, 850), ImVec2(457.64, 837.5), IconColor);
     //向左翻页
     DrawList->AddCircle(ImVec2(545, 850), 30.0f, IconColor, 0, 5.0f);
     DrawList->AddLine(ImVec2(530, 850), ImVec2(560, 850), IconColor, 5.0f);
@@ -405,32 +405,36 @@ void DrawBottomDocker(){
     //向右翻页
     DrawList->AddCircle(ImVec2(655, 850), 30.0f, IconColor, 0, 5.0f);
     DrawList->AddLine(ImVec2(640, 850), ImVec2(670, 850), IconColor, 5.0f);
-    DrawList->AddLine(ImVec2(669, 850), ImVec2(655, 835), IconColor, 5.0f);
-    DrawList->AddLine(ImVec2(669, 850), ImVec2(655, 865), IconColor, 5.0f);
+    DrawList->AddLine(ImVec2(668, 850), ImVec2(655, 835), IconColor, 5.0f);
+    DrawList->AddLine(ImVec2(668, 850), ImVec2(655, 865), IconColor, 5.0f);
     //放大
-    DrawList->AddCircle(ImVec2(765, 850), 30.0f, IconColor, 0, 5.0f);
-    DrawList->AddLine(ImVec2(805, 890), ImVec2(786.2, 871.2), IconColor, 5.0f);
+    DrawList->AddCircle(ImVec2(765, 850), 25.0f, IconColor, 0, 5.0f);
+    DrawList->AddLine(ImVec2(782.6, 867.6), ImVec2(795, 880), IconColor, 5.0f);
     //"+"
-    DrawList->AddLine(ImVec2(745, 850), ImVec2(785, 850), IconColor, 5.0f);
-    DrawList->AddLine(ImVec2(765, 830), ImVec2(765, 870), IconColor, 5.0f);
+    DrawList->AddLine(ImVec2(752.5, 850), ImVec2(777.5, 850), IconColor, 5.0f);
+    DrawList->AddLine(ImVec2(765, 837.5), ImVec2(765, 862.5), IconColor, 5.0f);
     //缩小
-    DrawList->AddCircle(ImVec2(875, 850), 30.0f, IconColor, 0, 5.0f);
-    DrawList->AddLine(ImVec2(915, 890), ImVec2(896.2, 871.2), IconColor, 5.0f);
+    DrawList->AddCircle(ImVec2(875, 850), 25.0f, IconColor, 0, 5.0f);
+    DrawList->AddLine(ImVec2(892.6, 867.6), ImVec2(905, 880), IconColor, 5.0f);
     //"-"
-    DrawList->AddLine(ImVec2(855, 850), ImVec2(895, 850), IconColor, 5.0f);
+    DrawList->AddLine(ImVec2(862.5, 850), ImVec2(887.5, 850), IconColor, 5.0f);
 }
 
 void DrawBottomDockerShadow(){
     ImDrawList* DrawList = ImGui::GetForegroundDrawList();
 
     if(shadow == 1)
-        DrawList->AddRectFilled(ImVec2(280, 805), ImVec2(370, 895), ImColor(0, 0, 0, 100));
+        DrawList->AddRectFilled(ImVec2(285, 810), ImVec2(365, 890), ImColor(0, 0, 0, 100));
     if(shadow == 2)
-        DrawList->AddRectFilled(ImVec2(390, 805), ImVec2(480, 895), ImColor(0, 0, 0, 100)); if(shadow == 3) DrawList->AddRectFilled(ImVec2(500, 805), ImVec2(590, 895), ImColor(0, 0, 0, 100)); if(shadow == 4) DrawList->AddRectFilled(ImVec2(610, 805), ImVec2(700, 895), ImColor(0, 0, 0, 100));
+        DrawList->AddRectFilled(ImVec2(395, 810), ImVec2(475, 890), ImColor(0, 0, 0, 100)); 
+    if(shadow == 3) 
+        DrawList->AddRectFilled(ImVec2(505, 810), ImVec2(585, 890), ImColor(0, 0, 0, 100)); 
+    if(shadow == 4) 
+        DrawList->AddRectFilled(ImVec2(615, 810), ImVec2(695, 890), ImColor(0, 0, 0, 100));
     if(shadow == 5)
-        DrawList->AddRectFilled(ImVec2(720, 805), ImVec2(810, 895), ImColor(0, 0, 0, 100));
+        DrawList->AddRectFilled(ImVec2(725, 810), ImVec2(805, 890), ImColor(0, 0, 0, 100));
     if(shadow == 6)
-        DrawList->AddRectFilled(ImVec2(830, 805), ImVec2(920, 895), ImColor(0, 0, 0, 100));
+        DrawList->AddRectFilled(ImVec2(835, 810), ImVec2(915, 890), ImColor(0, 0, 0, 100));
 }
 
 void LoadImage(int& width, int& height, int& nrChannel){
@@ -462,17 +466,17 @@ void ImageRotate(){
         LoadImage(width, height, nrChannel);
         float scale_value = 1.0f;
         if(width * 3 < height * 4){
-            scale_value = (float)width * SCR_WIDTH / (height * SCR_HEIGHT);
+            scale_value = ((float)width / height) * ((float)SCR_WIDTH / SCR_HEIGHT);
             trans = glm::scale(trans, glm::vec3(1.0f, scale_value, scale_value));
             std::cout << 1.0f / scale_value << " " << (float)height / width << "\n111\n";
         }
         else if(width * 3 > height * 4){
-            scale_value = (float)height * SCR_HEIGHT / (width * SCR_WIDTH);
+            scale_value = ((float)height / width) * ((float)SCR_HEIGHT / SCR_WIDTH);
             trans = glm::scale(trans, glm::vec3(scale_value, 1.0f, scale_value));
             std::cout << "222\n";
         }
         else{
-            scale_value = (float)height * SCR_HEIGHT / (width * SCR_WIDTH);
+            scale_value = ((float)height / width) * ((float)SCR_HEIGHT / SCR_WIDTH);
             trans = glm::scale(trans, glm::vec3(scale_value, 1.0f, scale_value));
 
         }
@@ -484,11 +488,11 @@ void ImageRotate(){
         LoadImage(width, height, nrChannel);
         float scale_value = 1.0f;
         if(width * 3 > height * 4){
-            scale_value = (float)height * SCR_WIDTH / (width * SCR_HEIGHT);
+            scale_value = ((float)height / width) * ((float)SCR_WIDTH / SCR_HEIGHT);
             trans = glm::scale(trans, glm::vec3(1.0f, scale_value, scale_value));
         }
         else if(width * 3 < height * 4){
-            scale_value = (float)width * SCR_HEIGHT / (height * SCR_WIDTH);
+            scale_value = ((float)width / height) * ((float)SCR_HEIGHT / SCR_WIDTH);
             trans = glm::scale(trans, glm::vec3(scale_value, 1.0f, scale_value));
         }
         trans = glm::scale(trans, glm::vec3(sv));
