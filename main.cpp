@@ -1,3 +1,4 @@
+#include <cstddef>
 #define STB_IMAGE_IMPLEMENTATION
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/fwd.hpp>
@@ -16,7 +17,6 @@
 #include "Shader.h"
 #include "stb_image.h"
 #include "getfilenames.h"
-#include "char_string.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
@@ -39,27 +39,26 @@ glm::mat4 trans(1.0f);
 
 const unsigned int SCR_WIDTH = 1200;
 const unsigned int SCR_HEIGHT = 900;
-const unsigned int MAXN = 10000;
 
 std::string filePath = "./resource";
 std::vector<std::string> filenames;
 int Index = 0, picture_number = 0;
 int shadow = 0;
 int Count_Rotate = 0;
-//int BottomDockerIconCenterX[] = {325, 435, 545, 655, 765, 875};
-//int BottomDockerIconCenterY = 850;
-//int ShadowHalfWidth = 45, ShadowHalfHeight = 45;
 bool firstOpenApp = true;
 bool whether_go_back = true;
 bool ShouldDrawBottomDocker = false;
+bool ShouldDrawScaleDocker = false;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 void mouse_callback(GLFWwindow* windwo, double xpos, double ypos);
 void processInput(GLFWwindow* window, Shader shader);
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void DrawBottomDocker();
 void DrawBottomDockerShadow();
+void DrawScaleDocker();
 void LoadImage(int &width, int &height, int &nrChannel);
 void ImageRotate();
 
@@ -82,6 +81,7 @@ int main(){
     glfwSetMouseButtonCallback(window, mouse_button_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
+    glfwSetKeyCallback(window, key_callback);
     if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){
         std::cout << "Failed initized glad!\n";
         return 0;
@@ -92,10 +92,11 @@ int main(){
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void) io;
 
+    io.Fonts->AddFontFromFileTTF("./Fonts/simhei.ttf", 30, NULL, io.Fonts->GetGlyphRangesChineseFull());
+
     ImGui::StyleColorsDark();
 
     Shader shader("./Shader/vShader.txt", "./Shader/fShader.txt");
-    //Shader shader1("./Shader/vShader.txt", "./Shader/fShader.txt");
     ID = shader.ID;
     
     //创建顶点
@@ -186,7 +187,6 @@ int main(){
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, textrue);
         glBindVertexArray(VAO);
-        //glDrawArrays(GL_TRIANGLES, 0, 3);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         ImGui_ImplOpenGL3_NewFrame();
@@ -197,16 +197,14 @@ int main(){
             DrawBottomDocker();
             DrawBottomDockerShadow();
         }
-        /*
-        ImGui::Begin(" ");
-    
-        if(ImGui::InputText("Please input file path:", &filePath)){
-            filenames.clear();
-            GetFileNames(filePath, filenames);
-            picture_number = filenames.size(); 
+
+        if(ShouldDrawScaleDocker){
+            float currentTime = glfwGetTime();
+            if(currentTime - lastTime > 1.0){
+                ShouldDrawScaleDocker = false;
+            }
+            DrawScaleDocker();
         }
-        ImGui::End();
-        */
         
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -229,36 +227,25 @@ int main(){
 }
 
 void processInput(GLFWwindow* window, Shader shader){
+}
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods){
     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
     if(glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS){
-        y_offset -= 0.005f;
-        shader.setFloat("yoffset", y_offset);
+        y_offset -= 0.007f;
+        glUniform1f(glGetUniformLocation(ID, "yoffset"), y_offset);
     }
     if(glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS){
-        y_offset += 0.005f;
-        shader.setFloat("yoffset", y_offset);
+        y_offset += 0.007f;
+        glUniform1f(glad_glGetUniformLocation(ID, "yoffset"), y_offset);
     }
-    if(glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS){
-        int currentTime = glfwGetTime();
-        if(currentTime - lastTime < 0.000000001f){
-            lastTime = currentTime;
-            return;
-        }
-        std::cout << "Delta Time:" << currentTime - lastTime << std::endl;
-        lastTime = currentTime;
+    if(key == GLFW_KEY_LEFT && action == GLFW_PRESS){
         Index = (Index + picture_number - 1) % picture_number;
         whether_go_back = true;
         std::cout << "whether_go_back:" << whether_go_back << " Index:" << Index << std::endl;
     }
-    if(glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS){
-        int currentTime = glfwGetTime();
-        if(currentTime - lastTime < 0.000000001f){
-            lastTime = currentTime;
-            return;
-        }
-        std::cout << "whether_go_back:" << whether_go_back << " Index:" << Index << std::endl;
-        lastTime = currentTime;
+    if(key == GLFW_KEY_RIGHT && action == GLFW_PRESS){
         Index = (Index + 1) % picture_number;
         whether_go_back = true;
         std::cout << "whether_go_back:" << whether_go_back << " Index:" << Index << std::endl;
@@ -272,6 +259,11 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height){
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset){
     float scale_value = 1.0f;
     scale_value += (float)yoffset * 0.05;
+    if((int)yoffset){
+        ShouldDrawScaleDocker = true;
+        std::cout << "ShouldDrawScaleDocker\n";
+        lastTime = glfwGetTime();
+    }
     if(sv * scale_value < 0.2f || sv * scale_value > 20.0f){
         trans = glm::scale(trans, glm::vec3(1.0f, 1.0f, 1.0f));
         return;
@@ -356,6 +348,8 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
             }
             //放大
             if(shadow == 5){
+                ShouldDrawScaleDocker = true;
+                lastTime = glfwGetTime();
                 float scale_value = 1.0f;
                 scale_value += 0.05;
                 if(sv * scale_value < 0.2f || sv * scale_value > 20.0f){
@@ -368,6 +362,8 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
             }
             //缩小
             if(shadow == 6){
+                ShouldDrawScaleDocker = true;
+                lastTime = glfwGetTime();
                 float scale_value = 1.0f;
                 scale_value -= 0.05;
                 if(sv * scale_value < 0.2f || sv * scale_value > 20.0f){
@@ -422,7 +418,6 @@ void DrawBottomDocker(){
 
 void DrawBottomDockerShadow(){
     ImDrawList* DrawList = ImGui::GetForegroundDrawList();
-
     if(shadow == 1)
         DrawList->AddRectFilled(ImVec2(285, 810), ImVec2(365, 890), ImColor(0, 0, 0, 100));
     if(shadow == 2)
@@ -437,8 +432,29 @@ void DrawBottomDockerShadow(){
         DrawList->AddRectFilled(ImVec2(835, 810), ImVec2(915, 890), ImColor(0, 0, 0, 100));
 }
 
+void DrawScaleDocker(){
+    ImColor IconColor(0, 0, 0, 220);
+    ImDrawList* DrawList = ImGui::GetForegroundDrawList();
+    DrawList->AddRectFilled(ImVec2(540, 420), ImVec2(660, 480), ImColor(255, 255, 255, 220), 10.0f);
+    //绘制图标
+    DrawList->AddCircle(ImVec2(565, 450), 15, IconColor, 0, 3.0f);
+    DrawList->AddLine(ImVec2(575.6, 460.6), ImVec2(585, 470), IconColor, 3.0f);
+    //"+"
+    DrawList->AddLine(ImVec2(557.5, 450), ImVec2(572.5, 450), IconColor, 3.0f);
+    DrawList->AddLine(ImVec2(565, 442.5), ImVec2(565, 457.5), IconColor, 3.0f);
+    //缩放程度
+    int Scale_Value = sv * 100;
+    std::string output = std::to_string(Scale_Value);
+    output += "%";
+    if(Scale_Value < 100)
+        DrawList->AddText(ImVec2(600, 435), ImColor(0, 0, 0), output.c_str());
+    else if(Scale_Value > 1000)
+        DrawList->AddText(ImVec2(583, 435), ImColor(0, 0, 0), output.c_str());
+    else
+        DrawList->AddText(ImVec2(590, 435), ImColor(0, 0, 0), output.c_str());
+}
+
 void LoadImage(int& width, int& height, int& nrChannel){
-   //unsigned char* data = stbi_load(".//resource//1.jpg", &width, &height, &nrChannel, 0);
     unsigned char* data;
     data = stbi_load(filenames[Index].c_str(), &width, &height, &nrChannel, 0);
     std::cout << filenames[Index] << std::endl;
