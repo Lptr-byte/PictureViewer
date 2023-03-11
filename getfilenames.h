@@ -4,7 +4,7 @@
 #include <vector>
 #include <iostream>
 using namespace std;
- 
+/*
 inline void GetFileNames(string path,vector<string>& filenames)
 {
     DIR *pDir;
@@ -23,4 +23,32 @@ inline void GetFileNames(string path,vector<string>& filenames)
         }
     }
     closedir(pDir);
+}*/
+
+inline void GetFileNames(string path, vector<string> &files)
+{
+    long hFile = 0;
+    struct _finddata_t fileinfo;
+    string pathp;
+    if ((hFile = _findfirst(pathp.assign(path).append("\\*").c_str(), &fileinfo)) != -1)
+    {
+        do
+        {
+            if ((fileinfo.attrib &  _A_SUBDIR))
+            {
+                if (strcmp(fileinfo.name, ".") != 0 && strcmp(fileinfo.name, "..") != 0)
+                {					
+                    continue;
+                }
+            }
+            else
+            {
+                string filestr = fileinfo.name;
+				if(filestr.find(".jpg") == string::npos && filestr.find(".png") == string::npos)
+                    continue;
+                files.push_back(path + "/" + filestr);
+            }
+        } while (_findnext(hFile, &fileinfo) == 0);
+        _findclose(hFile);
+    }
 }
