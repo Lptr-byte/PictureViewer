@@ -1,0 +1,19 @@
+{
+    "vim.easymotion": true,
+    "vim.incsearch": true,
+    "vim.useSystemClipboard": true,
+    "vim.useCtrlKeys": true,
+    "vim.leader": "<space>",
+    "vim.insertModeKeyBindings":[
+        {
+            "before":[
+                "j",
+                "j"
+            ],
+            "after":[
+                "<ESC>"
+            ]
+        },
+    ],
+    
+}
