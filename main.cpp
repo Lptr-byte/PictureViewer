@@ -1,5 +1,4 @@
 //#define STB_IMAGE_IMPLEMENTATION
-#include <cstdint>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -593,11 +592,11 @@ void DrawMenu(GLFWwindow* window){
     ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByTypeFile | IGFD_FileStyleByContainedInFullName, ".git", ImVec4(0.5f, 0.8f, 0.5f, 0.9f), ICON_IGFD_SAVE);
     ImGuiFileDialog::Instance()->SetFlashingAttenuationInSeconds(1.0f);
     // open Dialog Simple
-    if (ImGui::Button(u8" 打开文件", ImVec2(120, 35)))
+    if (ImGui::InvisibleButton(u8" 打开文件", ImVec2(120, 35)))
         ImGuiFileDialog::Instance()->OpenDialog("ChooseFileKey", u8"\uf07c Choose File", ".*,.jpg,.png", ".");
-    if (ImGui::Button(u8"打开文件夹", ImVec2(120, 35)))
+    if (ImGui::InvisibleButton(u8"打开文件夹", ImVec2(120, 35)))
         ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", u8"\uf07c Choose File", ".*", " ");
-    if (ImGui::Button(u8" 退出", ImVec2(120, 35)))
+    if (ImGui::InvisibleButton(u8" 退出", ImVec2(120, 35)))
         glfwSetWindowShouldClose(window, true);
 
     // display
