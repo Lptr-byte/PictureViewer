@@ -1,22 +1,22 @@
 //#define STB_IMAGE_IMPLEMENTATION
+#include <iostream>
+#include <string>
+#include <vector>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <string>
-#include <vector>
-#include <iostream>
 #include "Shader.h"
-#include "stb_image.h"
+#include "LoadTextureFromFile.h"
 #include "getfilenames.h"
-#include "imgui/imgui.h"
-#include "imgui/imgui_impl_glfw.h"
-#include "imgui/imgui_impl_opengl3.h"
-#include "imgui/imgui_stdlib.h"
+#include "stb_image.h"
+#include "./imgui/imgui.h"
+#include "./imgui/imgui_impl_glfw.h"
+#include "./imgui/imgui_impl_opengl3.h"
+#include "./imgui/imgui_stdlib.h"
 #include "./ImGuiFileDialog/ImGuiFileDialog.h"
 #include "./ImGuiFileDialog/CustomFont.h"
-#include "LoadTextureFromFile.h"
 
 float mouse_x = 0.0f;
 float mouse_y = 0.0f;
@@ -27,21 +27,21 @@ float sv = 1.0f;
 float lastX = 600.0f, lastY = 450.0f;
 float lastTime = 0.0f;
 
-bool firstMouse;
-
-unsigned int ID;
-
 glm::mat4 trans(1.0f);
 
+unsigned int ID;
 const unsigned int SCR_WIDTH = 1200;
 const unsigned int SCR_HEIGHT = 900;
 
 std::string filePath = "./resource";
 std::string filename, filePathName;
 std::vector<std::string> filenames;
+
 int Index = 0, picture_number = 0;
 int shadow = 0;
 int Count_Rotate = 0;
+
+bool firstMouse = true;
 bool firstOpenApp = true;
 bool firstEnterFolder = true;
 bool whether_go_back = true;
@@ -89,7 +89,7 @@ int main(){
     } 
 
 
-    Shader shader("./Shader/vShader.txt", "./Shader/fShader.txt");
+    Shader shader("./Shader/vShader.glsl", "./Shader/fShader.glsl");
     ID = shader.ID;
     
     //创建顶点
