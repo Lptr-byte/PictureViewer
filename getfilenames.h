@@ -4,7 +4,7 @@
 #include <vector>
 #include <iostream>
 using namespace std;
-/*
+
 inline void GetFileNames(string path,vector<string>& filenames)
 {
     DIR *pDir;
@@ -23,8 +23,9 @@ inline void GetFileNames(string path,vector<string>& filenames)
         }
     }
     closedir(pDir);
-}*/
+}
 
+/*
 inline void GetFileNames(string path, vector<string> &files)
 {
     long hFile = 0;
@@ -52,3 +53,4 @@ inline void GetFileNames(string path, vector<string> &files)
         _findclose(hFile);
     }
 }
+*/

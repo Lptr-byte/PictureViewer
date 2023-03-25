@@ -1,4 +1,4 @@
-#define STB_IMAGE_IMPLEMENTATION
+//#define STB_IMAGE_IMPLEMENTATION
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -13,6 +13,9 @@
 #include "./imgui/imgui_impl_glfw.h"
 #include "./imgui/imgui_impl_opengl3.h"
 #include "./imgui/imgui_stdlib.h"
+#include "./ImGuiFileDialog/ImGuiFileDialog.h"
+#include "./ImGuiFileDialog/CustomFont.h"
+#include "LoadTextureFromFile.h"
 
 float x_offset = 0.0f;
 float y_offset = 0.0f;
@@ -26,6 +29,7 @@ const unsigned int SCR_WIDTH = 1200;
 const unsigned int SCR_HEIGHT = 900;
 
 std::string filePath = "./resource";
+std::string filename, filePathName;
 std::vector<std::string> filenames;
 
 glm::mat4 trans(1.0f);
@@ -34,13 +38,15 @@ unsigned int ID;
 unsigned int picture_number = 0;
 
 int Index = 0;
-int shadow = 0;
+int shadow = -1;
 int Count_Rotate = 0;
 
 bool firstMouse;
 bool whether_go_back = true;
 bool ShouldDrawBottomDocker = false;
 bool ShouldDrawScaleDocker = false;
+bool ShouldDrawMenu = true;
+bool IsOpenInFolder = true;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
@@ -53,9 +59,9 @@ void ImageRotate();
 void DrawBottomDocker();
 void DrawBottomDockerShadow();
 void DrawScaleDocker();
+void DrawMenu(GLFWwindow* window);
 
-int main()
-{
+int main(){
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
@@ -63,8 +69,7 @@ int main()
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
     GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "PictureViewer", NULL, NULL);
-    if (window == NULL)
-    {
+    if (window == NULL){
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return -1;
@@ -76,8 +81,7 @@ int main()
     glfwSetScrollCallback(window, scroll_callback);
     glfwSetKeyCallback(window, key_callback);
 
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-    {
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
@@ -128,31 +132,76 @@ int main()
     GetFileNames(filePath, filenames);
     picture_number = filenames.size();
     stbi_set_flip_vertically_on_load(true);
+    std::cout << picture_number << std::endl;
 
-    //Set imgui
+     //Set imgui
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void) io;
+    ImFont* MyFonts = io.Fonts->AddFontFromFileTTF("./Fonts/Hack Regular Nerd Font Complete.ttf", 20, NULL, io.Fonts->GetGlyphRangesDefault());
+    static const ImWchar icons_ranges[] = { 0xeb99, 0xf0a88, 0 };
+    ImFontConfig icons_config;
+    icons_config.MergeMode = true;
+    icons_config.PixelSnapH = true;
+    io.Fonts->AddFontFromFileTTF("./Fonts/simhei.ttf", 20, &icons_config, io.Fonts->GetGlyphRangesChineseFull());
+    io.Fonts->AddFontFromFileTTF("./Fonts/Hack Regular Nerd Font Complete.ttf", 20, &icons_config, icons_ranges);
+    io.Fonts->Build();
 
-    io.Fonts->AddFontFromFileTTF("./Fonts/Hack Regular Nerd Font Complete.ttf", 30, NULL, io.Fonts->GetGlyphRangesChineseFull());
+    io.ConfigFlags |= ImGuiViewportFlags_NoDecoration;
 
     ImGui::StyleColorsDark();
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.WindowRounding = 10;
+    style.FrameRounding = 7;
+    style.WindowBorderSize = 0;
+
+    ImVec4* colors = ImGui::GetStyle().Colors;
+    colors[ImGuiCol_Button] = ImVec4(1.00f, 1.00f, 1.00f, 0.13f);
 
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init();
 
-    while (!glfwWindowShouldClose(window))
-    {
+    while (!glfwWindowShouldClose(window)){
         processInput(window);
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture1);
+
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        if(ShouldDrawMenu){
+            shadow = -1;
+            DrawMenu(window);
+
+            glfwSwapBuffers(window);
+            glfwPollEvents();
+            continue;
+        }
+
         if(whether_go_back){
             //设置纹理
             trans = glm::mat4(1.0f);
             x_offset = 0.0f; y_offset = 0.0f;
+            theta = 0.0f;
             Shader.use();
+            GetFileNames(filePath, filenames);
+            picture_number = filenames.size(); 
+            std::cout << filenames[0] << std::endl;
+            if(!IsOpenInFolder){
+                for(int i = 0; i < picture_number; i++){
+                    if(filenames[i].find(filename) != std::string::npos){
+                        Index = i;
+                        std::cout << "Index = " << Index << std::endl;
+                        break;
+                    }
+                }
+                IsOpenInFolder = true;
+            }
             LoadImage(width, height, nrChannels);
             Shader.setFloat("xoffset", x_offset);
             Shader.setFloat("yoffset", y_offset);
@@ -169,18 +218,11 @@ int main()
             whether_go_back = false;
         }
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture1);
-
         Shader.use();
         Shader.setFloat("theta", theta);
         glUniformMatrix4fv(glGetUniformLocation(ID, "trans"), 1, GL_FALSE, glm::value_ptr(trans));
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
 
         if(ShouldDrawBottomDocker){
             DrawBottomDocker();
@@ -261,9 +303,11 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset){
 void mouse_callback(GLFWwindow* window, double xpos, double ypos){
     if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE){
         firstMouse = true;
-        if((int)xpos > 240 && (int)xpos < 960 && (int)ypos > 800 && (int)ypos < 900){
+        if((int)xpos > 130 && (int)xpos < 1070 && (int)ypos > 800 && (int)ypos < 900){
             ShouldDrawBottomDocker = true;
-            if((int)xpos > 285 && (int)xpos < 365 && (int)ypos > 805 && (int)ypos < 895)
+            if((int)xpos > 175 && (int)xpos < 255 && (int)ypos > 810 && (int)ypos < 890)
+                shadow = 0;
+            else if((int)xpos > 285 && (int)xpos < 365 && (int)ypos > 810 && (int)ypos < 890)
                 shadow = 1;
             else if((int)xpos > 395 && (int)xpos < 475 && (int)ypos > 810 && (int)ypos < 890)
                 shadow = 2;
@@ -275,8 +319,10 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos){
                 shadow = 5;
             else if((int)xpos > 835 && (int)xpos < 915 && (int)ypos > 810 && (int)ypos < 890)
                 shadow = 6;
+            else if((int)xpos > 945 && (int)xpos < 1025 && (int)ypos > 810 && (int)ypos < 890)
+                shadow = 7;
             else
-                shadow = 0;
+                shadow = -1;
         }
         else {
             ShouldDrawBottomDocker = false;
@@ -305,32 +351,42 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     if(action == GLFW_PRESS){
         if(button == GLFW_MOUSE_BUTTON_LEFT){
             std::cout << "Mouse Button Left Down!\n";
+            std::cout << "shadow = " << shadow << std::endl;
+            //1：1
+            if(shadow == 0){
+                ShouldDrawScaleDocker = true;
+                lastTime = glfwGetTime();
+                float scale_value = 1.0f;
+                scale_value = 1.0f / sv;
+                sv = 1.0f;
+                trans = glm::scale(trans, glm::vec3(scale_value, scale_value, scale_value));
+            }
             //左旋
-            if(shadow == 1){
+            else if(shadow == 1){
                 Count_Rotate++;
                 theta += glm::radians(90.0f);
                 ImageRotate();                
             }
             //右旋
-            if(shadow == 2){
+            else if(shadow == 2){
                 Count_Rotate++;
                 theta -= glm::radians(90.0f);
                 ImageRotate();
             }
             //向左翻页
-            if(shadow == 3){
+            else if(shadow == 3){
                 Index = (Index + picture_number - 1) % picture_number;
                 theta = 0.0f;
                 whether_go_back = true;
             }
             //向右翻页
-            if(shadow == 4){
+            else if(shadow == 4){
                 Index = (Index + 1) % picture_number;
                 theta = 0.0f;
                 whether_go_back = true;
             }
             //放大
-            if(shadow == 5){
+            else if(shadow == 5){
                 ShouldDrawScaleDocker = true;
                 lastTime = glfwGetTime();
                 float scale_value = 1.0f;
@@ -344,7 +400,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
                 std::cout << "scale_value:" << sv << std::endl;
             }
             //缩小
-            if(shadow == 6){
+            else if(shadow == 6){
                 ShouldDrawScaleDocker = true;
                 lastTime = glfwGetTime();
                 float scale_value = 1.0f;
@@ -357,6 +413,12 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
                 trans = glm::scale(trans, glm::vec3(scale_value, scale_value, scale_value));
                 std::cout << "scale_value:" << sv << std::endl;
             }
+            //返回菜单
+            else if(shadow == 7){
+                ShouldDrawMenu = true;
+                whether_go_back = true;
+            }
+            shadow = -1;
         }
     }
 }
@@ -383,7 +445,7 @@ void LoadImage(int& width, int& height, int& nrChannels){
     stbi_image_free(data);
     std::cout << "Width = " << width << " Height = " << height << "\n";
 
-    glUniform1i(glGetUniformLocation(ID, "myTexture1"), 0);
+    glUniform1i(glGetUniformLocation(ID, "texture1"), 0);
 }
 
 void ImageRotate(){
@@ -429,8 +491,12 @@ void ImageRotate(){
 void DrawBottomDocker(){
     ImColor IconColor(0, 0, 0, 220);
     ImDrawList* DrawList = ImGui::GetForegroundDrawList();
-    DrawList->AddRectFilled(ImVec2(240, 800), ImVec2(960, 900), ImColor(255, 255, 255, 220), 20.0f);
+    ImFont* MyFont = ImGui::GetFont();
+    DrawList->AddRectFilled(ImVec2(130, 800), ImVec2(1070, 900), ImColor(255, 255, 255, 220), 20.0f);
     //绘制控件图标
+    //[1:1]
+    DrawList->AddRect(ImVec2(185, 827.5), ImVec2(245, 872.5), IconColor, 3.0f, 0, 5.0f);
+    DrawList->AddText(MyFont, 35, ImVec2(187.5, 833), ImColor(0, 0, 0, 255), "1:1");
     //左旋
     DrawList->PathArcTo(ImVec2(325, 850), 28.0f, glm::radians(210.0f), glm::radians(450.0f));
     DrawList->PathStroke(IconColor, 0, 5.0f);
@@ -462,27 +528,39 @@ void DrawBottomDocker(){
     DrawList->AddLine(ImVec2(892.6, 867.6), ImVec2(905, 880), IconColor, 5.0f);
     //"-"
     DrawList->AddLine(ImVec2(862.5, 850), ImVec2(887.5, 850), IconColor, 5.0f);
+    //返回开始菜单
+    //DrawList->AddText(MyFont, 70, ImVec2(962.5, 815), ImColor(0, 0, 0, 225), "\uf85b");
+    DrawList->AddLine(ImVec2(955, 834), ImVec2(1015, 834), IconColor, 5.0f);
+    DrawList->AddLine(ImVec2(955, 850), ImVec2(1015, 850), IconColor, 5.0f);
+    DrawList->AddLine(ImVec2(955, 866), ImVec2(1015, 866), IconColor, 5.0f);
 }
 
 void DrawBottomDockerShadow(){
     ImDrawList* DrawList = ImGui::GetForegroundDrawList();
+    ImColor ShadowColor(0, 0, 0, 100);
+    if(shadow == 0)
+        DrawList->AddRectFilled(ImVec2(175, 810), ImVec2(255, 890), ShadowColor);
     if(shadow == 1)
-        DrawList->AddRectFilled(ImVec2(285, 810), ImVec2(365, 890), ImColor(0, 0, 0, 100));
+        DrawList->AddRectFilled(ImVec2(285, 810), ImVec2(365, 890), ShadowColor);
     if(shadow == 2)
-        DrawList->AddRectFilled(ImVec2(395, 810), ImVec2(475, 890), ImColor(0, 0, 0, 100)); 
+        DrawList->AddRectFilled(ImVec2(395, 810), ImVec2(475, 890), ShadowColor); 
     if(shadow == 3) 
-        DrawList->AddRectFilled(ImVec2(505, 810), ImVec2(585, 890), ImColor(0, 0, 0, 100)); 
+        DrawList->AddRectFilled(ImVec2(505, 810), ImVec2(585, 890), ShadowColor); 
     if(shadow == 4) 
-        DrawList->AddRectFilled(ImVec2(615, 810), ImVec2(695, 890), ImColor(0, 0, 0, 100));
+        DrawList->AddRectFilled(ImVec2(615, 810), ImVec2(695, 890), ShadowColor);
     if(shadow == 5)
-        DrawList->AddRectFilled(ImVec2(725, 810), ImVec2(805, 890), ImColor(0, 0, 0, 100));
+        DrawList->AddRectFilled(ImVec2(725, 810), ImVec2(805, 890), ShadowColor);
     if(shadow == 6)
-        DrawList->AddRectFilled(ImVec2(835, 810), ImVec2(915, 890), ImColor(0, 0, 0, 100));
+        DrawList->AddRectFilled(ImVec2(835, 810), ImVec2(915, 890), ShadowColor);
+    if(shadow == 7){
+        DrawList->AddRectFilled(ImVec2(945, 810), ImVec2(1025, 890), ShadowColor);
+    }
 }
 
 void DrawScaleDocker(){
     ImColor IconColor(0, 0, 0, 220);
     ImDrawList* DrawList = ImGui::GetForegroundDrawList();
+    ImFont* MyFont = ImGui::GetFont();
     DrawList->AddRectFilled(ImVec2(540, 420), ImVec2(660, 480), ImColor(255, 255, 255, 220), 10.0f);
     //绘制图标
     DrawList->AddCircle(ImVec2(565, 450), 15, IconColor, 0, 3.0f);
@@ -495,9 +573,100 @@ void DrawScaleDocker(){
     std::string output = std::to_string(Scale_Value);
     output += "%";
     if(Scale_Value < 100)
-        DrawList->AddText(ImVec2(600, 435), ImColor(0, 0, 0), output.c_str());
+        DrawList->AddText(MyFont, 30, ImVec2(600, 435), ImColor(0, 0, 0), output.c_str());
     else if(Scale_Value > 1000)
-        DrawList->AddText(ImVec2(583, 435), ImColor(0, 0, 0), output.c_str());
+        DrawList->AddText(MyFont, 30, ImVec2(581, 435), ImColor(0, 0, 0), output.c_str());
     else
-        DrawList->AddText(ImVec2(590, 435), ImColor(0, 0, 0), output.c_str());
+        DrawList->AddText(MyFont, 30, ImVec2(590, 435), ImColor(0, 0, 0), output.c_str());
+}
+
+void DrawMenu(GLFWwindow* window){
+    ImGui::Begin(" ", NULL, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
+
+    //设置菜单信息
+    ImDrawList* DrawList = ImGui::GetForegroundDrawList();
+    ImDrawList* BackgroundDrawList = ImGui::GetBackgroundDrawList();
+    ImColor textColor(255, 255, 255);
+    ImFont* MyFont = ImGui::GetFont();
+    //DrawList->AddText(MyFont, 150, ImVec2(30, 40), textColor, "Picture Viewer");
+    
+    //设置背景
+    int my_image_width = 0;
+    int my_image_height = 0;
+    GLuint background = 0, BackgroundText = 0;
+    bool ret = LoadTextureFromFile("./UI/background2.png", &background, &my_image_width, &my_image_height);
+    IM_ASSERT(ret);
+    BackgroundDrawList->AddImage((void *)(intptr_t)background, ImVec2(0, 0), ImVec2(1200, 900));
+    ret = LoadTextureFromFile("./UI/PictureViewer.png", &BackgroundText, &my_image_width, &my_image_height);
+    IM_ASSERT(ret);
+    BackgroundDrawList->AddImage((void*)(intptr_t)BackgroundText, ImVec2(0, 100), ImVec2(my_image_width, 100 + my_image_height)); 
+    BackgroundDrawList->AddText(MyFont, 30, ImVec2(460, 860), textColor, "v2.0.0 by Hanasa");
+
+    ImVec2 maxSize = ImVec2(SCR_WIDTH * 0.8, SCR_HEIGHT * 0.8);  // The full display area
+    ImVec2 minSize = ImVec2(SCR_WIDTH * 0.5, SCR_HEIGHT * 0.5);  // Half the display area
+    ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByFullName, "(Custom.+[.]h)", ImVec4(1.0f, 1.0f, 0.0f, 0.9f));
+    ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByTypeDir, nullptr, ImVec4(0.5f, 1.0f, 0.9f, 0.9f), ICON_IGFD_FOLDER); // for all dirs
+    ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByTypeFile, nullptr, ImVec4(0.1f, 0.5f, 0.5f, 0.9f), ICON_IGFD_FILE);
+    ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByFullName, "doc", ImVec4(0.9f, 0.2f, 0.0f, 0.9f), ICON_IGFD_FILE_PIC);
+    ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByExtention, ".cpp", ImVec4(1.0f, 1.0f, 0.0f, 0.9f), ICON_IGFD_CPP);
+    ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByExtention, ".c", ImVec4(1.0f, 1.0f, 0.6f, 0.9f), ICON_IGFD_C);
+    ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByExtention, ".h", ImVec4(0.0f, 1.0f, 0.0f, 0.9f), ICON_IGFD_HEADFILE);
+    ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByExtention, ".hpp", ImVec4(0.0f, 0.0f, 1.0f, 0.9f), ICON_IGFD_HPP);
+    ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByExtention, ".md", ImVec4(1.0f, 0.0f, 1.0f, 0.9f), ICON_IGFD_MARKDOWN);
+    ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByExtention, ".png", ImVec4(0.0f, 1.0f, 1.0f, 0.9f), ICON_IGFD_FILE_PIC); // add an icon for the filter type
+    ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByExtention, ".jpg", ImVec4(0.0f, 1.0f, 1.0f, 0.9f), ICON_IGFD_FILE_PIC);
+    ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByExtention, ".gif", ImVec4(0.0f, 1.0f, 0.5f, 0.9f), ICON_IGFD_FILE_PIC); // add an text for a filter type
+    ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByExtention, ".ini", ImVec4(0.5f, 1.0f, 0.9f, 0.9f), ICON_IGFD_SETTINGS); // add an text for a filter type
+    ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByTypeDir | IGFD_FileStyleByContainedInFullName, ".git", ImVec4(0.9f, 0.2f, 0.0f, 0.9f), ICON_IGFD_BOOKMARK);
+    ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByTypeFile | IGFD_FileStyleByContainedInFullName, ".git", ImVec4(0.5f, 0.8f, 0.5f, 0.9f), ICON_IGFD_SAVE);
+    ImGuiFileDialog::Instance()->SetFlashingAttenuationInSeconds(1.0f);
+    // open Dialog Simple
+    if (ImGui::Button(u8" 打开文件", ImVec2(120, 35)))
+        ImGuiFileDialog::Instance()->OpenDialog("ChooseFileKey", u8"\uf07c Choose File", ".*,.jpg,.png", ".");
+    if (ImGui::Button(u8"打开文件夹", ImVec2(120, 35)))
+        ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", u8"\uf07c Choose File", ".*", " ");
+    if (ImGui::Button(u8" 退出", ImVec2(120, 35)))
+        glfwSetWindowShouldClose(window, true);
+
+    // display
+    if(ImGuiFileDialog::Instance()->Display("ChooseFileKey", ImGuiWindowFlags_NoCollapse, minSize, maxSize)) {
+        // action if OK
+        if (ImGuiFileDialog::Instance()->IsOk()){
+            filename = ImGuiFileDialog::Instance()->GetCurrentFileName();
+            filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
+            filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
+            // action
+            std::cout << "fileName:" << filename << " filePath:" << filePath << '\n';
+            if(filename.find(".jpg") != std::string::npos || filename.find(".png") != std::string::npos){
+                ShouldDrawMenu = false;
+                IsOpenInFolder = false;
+            }
+            else {
+                //弹出报错窗口
+            }
+        }
+        // close
+        ImGuiFileDialog::Instance()->Close();
+    }
+    
+    if(ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey", ImGuiWindowFlags_NoCollapse, minSize, maxSize)) {
+        // action if OK
+        if (ImGuiFileDialog::Instance()->IsOk()){
+            filename = ImGuiFileDialog::Instance()->GetCurrentFileName();
+            filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
+            filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
+            // action
+            std::cout << "fileName:" << filename << " filePath:" << filePath << '\n';
+            ShouldDrawMenu = false;
+            IsOpenInFolder = true;
+            Index = 0;
+        }
+        // close
+        ImGuiFileDialog::Instance()->Close();
+    }
+
+    ImGui::End();
+
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
