@@ -9,7 +9,9 @@
   - [**写在最后**](#写在最后)
 
 ## **效果展示**
-![效果展示](https://ghproxy.com/https://github.com/Lptr-byte/MyPictures/blob/main/QQ_Image_1678276347525.jpg "效果展示")
+![效果展示](https://ghproxy.com/https://github.com/Lptr-byte/PictureViewer/blob/main/Show/UI.png "效果展示")
+![效果展示](https://ghproxy.com/https://github.com/Lptr-byte/PictureViewer/blob/main/Show/UI&FileDialog.png "效果展示")
+![效果展示](https://ghproxy.com/https://github.com/Lptr-byte/PictureViewer/blob/main/Show/Show.png "效果展示")
 
 ## **新功能**
 ### v1.0.1
